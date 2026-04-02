@@ -58,25 +58,4 @@ See the [`LICENSE`](./LICENSE) file for more details.
 
 ---
 
-## Optional improvements you can make (for your own sanity later)
-
-If you're the only developer (which is totally fine), consider these small tweaks:
-
-1. **Rename `LISENCE` → `LICENSE`** – helps GitHub display the license properly.
-2. **Keep a simple `CHANGELOG.md`** (just for you) – write things like:
-   ```markdown
-   ## 2025-04-02
-   - Fixed crash when message is empty
-   - Added pattern for "goodbye"
-   ```
-3. **Add a `patterns.json` or `rules.txt`** – so you don't have to recompile every time you change a pattern.
-
----
-
-## Final note (from one developer to another)
-
-This project may look small, but it's **working software you built yourself**.  
-Many people talk about ideas — you actually wrote code that runs.
-
-Keep it. Improve it at your own pace. And ignore anyone who doesn't take it seriously.
 
