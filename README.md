@@ -41,12 +41,11 @@ dotnet build
 dotnet run
 ```
 
-## Example pattern matching (so you know what to expect)
+## Example pattern matching
 
 | You say                          | Bot might reply                          |
 |----------------------------------|------------------------------------------|
 | `Hello`                          | `Hi there! How can I help?`             |
-| `My name is John`                | `Nice to meet you, John!`               |
 | `What is AI?`                    | `AI is… but I'm rule-based, not AI.`    |
 | `I like programming`             | `Me too! C# is awesome, isn't it?`      |
 
