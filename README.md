@@ -3,7 +3,7 @@
 
 ## What is it?
 
-**RuleBased Machine** is a **rule-based** chatbot programmed in C#.  
+**NtAI** is a **rule-based** chatbot programmed in C#.  
 It uses **pattern matching** to understand and respond to user messages — no AI, no machine learning, just simple and predictable logic.
 
 > Perfect for learning, prototyping, or embedding into tools where deterministic responses are enough.
