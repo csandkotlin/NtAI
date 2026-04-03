@@ -1,5 +1,5 @@
 
-# RuleBased Machine
+# Not A AI (NtAI)
 
 ## What is it?
 
@@ -24,7 +24,7 @@ Type your message, and the chatbot will reply by matching your input against pre
 **1. Clone this repository**
 
 ```bash
-git clone https://github.com/realmg51-cpu/RuleBased-Machine.git
+git clone https://github.com/realmg51-cpu/NtAI.git
 ```
 
 **2. Build the project**
