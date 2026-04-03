@@ -1,0 +1,82 @@
+version: 2
+updates:
+  # 1. NuGet (.NET) dependencies
+  - package-ecosystem: "nuget"
+    directory: "/"
+    schedule:
+      interval: "daily"
+      time: "07:00"
+      timezone: "Asia/Ho_Chi_Minh"
+    open-pull-requests-limit: 15
+    labels:
+      - "dependencies"
+      - "automerge"
+      - "nuget"
+    reviewers:
+      - "realmg51-cpu"  # Thay bằng username của bạn
+    assignees:
+      - "realmg51-cpu"
+    # Chỉ update các package không phải preview/prerelease
+    versioning-strategy: "auto"
+    # Nhóm các minor/patch updates vào 1 PR
+    groups:
+      minor-and-patch:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+      xunit:
+        patterns:
+          - "xunit*"
+          - "coverlet*"
+    # Bỏ qua một số package không muốn update
+    ignore:
+      - dependency-name: "Microsoft.NET.Test.Sdk"
+        versions: ["18.x.x"]  # Chờ stable
+      - dependency-name: "System.Text.Json"
+        versions: [">=9.0.0"]  # Giữ phiên bản LTS
+      # Bỏ qua tất cả beta/preview versions
+      - dependency-name: "*"
+        update-types: ["version-update:semver-prelease"]
+
+  # 2. GitHub Actions workflows
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "08:00"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "github-actions"
+    reviewers:
+      - "realmg51-cpu"
+    groups:
+      actions-minor:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+
+  # 3. Check các thư mục con khác (nếu có)
+  - package-ecosystem: "nuget"
+    directory: "/src/NtAI.Core"  # Ví dụ sub-project
+    schedule:
+      interval: "weekly"
+    labels:
+      - "dependencies"
+    ignore:
+      - dependency-name: "Serilog*"
+        versions: ["4.x"]
+
+  # 4. Docker (nếu dùng)
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    labels:
+      - "dependencies"
+      - "docker"
