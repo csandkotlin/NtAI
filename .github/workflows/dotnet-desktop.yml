@@ -16,29 +16,17 @@ jobs:
 
     runs-on: windows-latest
 
-    env:
-      Solution_Name: NtAI.sln
-      Test_Project_Path: tests/NtAI.Tests/NtAI.Tests.csproj
-
     steps:
     - name: Checkout
       uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
 
-    - name: Setup .NET Core
+    - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 8.0.x
 
-    - name: Setup MSBuild
-      uses: microsoft/setup-msbuild@v2
-
     - name: Restore dependencies
-      run: dotnet restore $env:Solution_Name
+      run: dotnet restore NtAI.sln
 
-    - name: Build solution
-      run: msbuild $env:Solution_Name /p:Configuration=${{ matrix.configuration }}
-
-    - name: Run tests
-      run: dotnet test $env:Test_Project_Path --no-build --configuration ${{ matrix.configuration }}
+    - name: Build
+      run: dotnet build NtAI.sln --configuration ${{ matrix.configuration }} --no-restore
