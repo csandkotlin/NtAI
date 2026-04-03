@@ -3,7 +3,7 @@ namespace NtAI
 {
   class Logic
   {
-    static void Call()
+    public static void Call()
     {
       bool run = true;
       while(true)
