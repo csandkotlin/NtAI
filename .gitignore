@@ -1,25 +1,23 @@
-# Bin và obj - thư mục build output
-[Bb]in/
-[Oo]bj/
+# Build output (bin, obj ở mọi cấp độ)
+**/bin/
+**/obj/
 
-# Thư mục của Visual Studio
+# Visual Studio
 .vs/
 .vscode/
 
-# User-specific files
+# File đặc trưng từng máy
 *.user
-*.userosscache
 *.suo
 *.userprefs
+*.pidb
+*.dbmdl
 
-# Build results
-*.dll
-*.exe
-*.pdb
+# NuGet packages
+packages/
 *.nupkg
-*.nuspec
-*.snk
-*.pubxml
+project.lock.json
+project.assets.json
 
 # Test results
 TestResults/
@@ -27,37 +25,15 @@ TestResults/
 *.coverage
 *.coveragexml
 
-# NuGet
-packages/
-*.nupkg
-project.lock.json
-project.assets.json
-*.nuget.props
-*.nuget.targets
-
 # Rider / JetBrains
 .idea/
 *.sln.iml
 
-# Logs
+# Logs & temp
 *.log
-*.logs
-logs/
-
-# Temp files
 *.tmp
 *.temp
-*.cache
-
-# Publishing
-/publish/
-*.pubxml.user
-
-# Entity Framework
-/Migrations/*.snapshot.cs
-*.db
-*.sqlite
-*.sqlite3
+logs/
 
 # Linux/Mac
 .DS_Store
