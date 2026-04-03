@@ -1,0 +1,64 @@
+# Bin và obj - thư mục build output
+[Bb]in/
+[Oo]bj/
+
+# Thư mục của Visual Studio
+.vs/
+.vscode/
+
+# User-specific files
+*.user
+*.userosscache
+*.suo
+*.userprefs
+
+# Build results
+*.dll
+*.exe
+*.pdb
+*.nupkg
+*.nuspec
+*.snk
+*.pubxml
+
+# Test results
+TestResults/
+*.trx
+*.coverage
+*.coveragexml
+
+# NuGet
+packages/
+*.nupkg
+project.lock.json
+project.assets.json
+*.nuget.props
+*.nuget.targets
+
+# Rider / JetBrains
+.idea/
+*.sln.iml
+
+# Logs
+*.log
+*.logs
+logs/
+
+# Temp files
+*.tmp
+*.temp
+*.cache
+
+# Publishing
+/publish/
+*.pubxml.user
+
+# Entity Framework
+/Migrations/*.snapshot.cs
+*.db
+*.sqlite
+*.sqlite3
+
+# Linux/Mac
+.DS_Store
+Thumbs.db
