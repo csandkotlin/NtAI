@@ -40,14 +40,15 @@ dotnet build
 dotnet run
 ```
 
-Ví dụ về so khớp mẫu
+### Ví dụ về so khớp mẫu
 
-Bạn nói Bot có thể trả lời
-Xin chào Chào bạn! Tôi có thể giúp gì được không?
-AI là gì? AI là… nhưng tôi dựa trên quy tắc, không phải AI.
-Tôi thích lập trình Tôi cũng vậy! C# rất tuyệt phải không nào?
+| Bạn nói | Bot có thể trả lời |
+|---------|---------------------|
+| Xin chào | Chào bạn! Tôi có thể giúp gì được không? |
+| AI là gì? | AI là… nhưng tôi dựa trên quy tắc, không phải AI. |
+| Tôi thích lập trình | Tôi cũng vậy! C# rất tuyệt phải không nào? |
 
-Giấy phép
+## Giấy phép
 
 Dự án này được cấp phép theo Giấy phép MIT.
 Xem tệp [LICENSE](./LICENSE) để biết thêm chi tiết.
