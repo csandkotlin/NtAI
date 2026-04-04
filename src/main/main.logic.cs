@@ -27,6 +27,11 @@ namespace NtAI
         {
           Console.WriteLine("My Name is NtAI");
         }
+        else if (input.Contains("bye") || input.Contains("goodbye"))
+        {
+          Console.WriteLine("Bye! See you again!");
+          run = false;
+        }
         else
         {
           Console.WriteLine($"I don't know about '{input}',please talk about something else");
