@@ -1,6 +1,12 @@
 
 # Not A AI (NtAI)
-[English](./README.md)
+[![.NET Core Desktop](https://github.com/csandkotlin/NtAI/actions/workflows/dotnet-desktop.yml/badge.svg)](https://github.com/csandkotlin/NtAI/actions/workflows/dotnet-desktop.yml)
+[![.NET Core Desktop](https://github.com/csandkotlin/NtAI/actions/workflows/dotnet-desktop.yml/badge.svg)](https://github.com/csandkotlin/NtAI/actions/workflows/dotnet-desktop.yml)
+
+---
+
+[View in English!](./README.md)
+
 ## Nó là gì?
 
 **NtAI** là một chatbot **dựa trên quy tắc** được viết bằng C#.  
