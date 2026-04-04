@@ -32,6 +32,10 @@ namespace NtAI
           Console.WriteLine("Bye! See you again!");
           run = false;
         }
+        else if (input.Contains("AI"))
+        {
+          Console.WriteLine("AI is... But i'm not AI,I'm rule based");
+        }
         else
         {
           Console.WriteLine($"I don't know about '{input}',please talk about something else");
