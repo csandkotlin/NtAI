@@ -6,7 +6,7 @@ namespace NtAI
     public static void Call()
     {
       bool run = true;
-      while(true)
+      while(run)
       {
         Console.Write("You: ");
         string input = Console.ReadLine()?.Trim().ToLower() ?? "";
@@ -19,7 +19,14 @@ namespace NtAI
         {
           Console.WriteLine("Sorry,I can't hear that.");
         }
-
+        else if (input.Contains("hi") || input.Contains("hello"))
+        {
+          Console.WriteLine("Hi there! Can I help you?");
+        }
+        else if (input.Contains("your name") || input.Contains("ur name"))
+        {
+          Console.WriteLine("My Name is NtAI");
+        }
         else
         {
           Console.WriteLine($"I don't know about '{input}',please talk about something else");
