@@ -1,6 +1,6 @@
 
 # Not A AI (NtAI)
-
+[Vietnamese](./README_VI.md)
 ## What is it?
 
 **NtAI** is a **rule-based** chatbot programmed in C#.  
