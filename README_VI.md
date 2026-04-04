@@ -57,4 +57,4 @@ dotnet run
 ## Giấy phép
 
 Dự án này được cấp phép theo Giấy phép MIT.
-Xem tệp [LICENSE](./LICENSE) để biết thêm chi tiết.
+Xem tệp [`LICENSE`](./LICENSE) để biết thêm chi tiết.
