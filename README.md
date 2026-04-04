@@ -1,6 +1,10 @@
 
 # Not A AI (NtAI)
-[Vietnamese](./README_VI.md)
+[![.NET Core Desktop](https://github.com/csandkotlin/NtAI/actions/workflows/dotnet-desktop.yml/badge.svg)](https://github.com/csandkotlin/NtAI/actions/workflows/dotnet-desktop.yml)
+[![.NET Core Desktop](https://github.com/csandkotlin/NtAI/actions/workflows/dotnet-desktop.yml/badge.svg)](https://github.com/csandkotlin/NtAI/actions/workflows/dotnet-desktop.yml)
+
+---
+[Đọc tiếng việt đi bro](./README_VI.md)
 ## What is it?
 
 **NtAI** is a **rule-based** chatbot programmed in C#.  
