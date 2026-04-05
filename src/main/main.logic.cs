@@ -36,7 +36,7 @@ namespace NtAI
         {
           Console.WriteLine("AI is... But i'm not AI,I'm rule based");
         }
-        else if (input.Contains("like programming"))
+        else if (input.Contains("like programming") || input.Contains("love programming"))
         {
           Console.WriteLine("Me too! C# is awesome,isn't it?");
         }
