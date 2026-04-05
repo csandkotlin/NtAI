@@ -38,7 +38,7 @@ namespace NtAI
         }
         else if (input.Contains("like programming"))
         {
-          Console.WriteLine("Me too! C# is interesting,right?");
+          Console.WriteLine("Me too! C# is awesome,isn't it?");
         }
         else
         {
