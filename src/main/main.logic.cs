@@ -36,6 +36,10 @@ namespace NtAI
         {
           Console.WriteLine("AI is... But i'm not AI,I'm rule based");
         }
+        else if (input.Contains("like programming"))
+        {
+          Console.WriteLine("Me too! C# is interesting,right?");
+        }
         else
         {
           Console.WriteLine($"I don't know about '{input}',please talk about something else");
