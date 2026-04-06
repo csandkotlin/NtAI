@@ -1,4 +1,5 @@
 *.md linguist-language=Markdown
-
 Dockerfile linguist-language=Dockerfile
-Jenkinsfile linguist-language=Markdown
+Jenkinsfile linguist-language=Groovy
+*.csproj linguist-language=XML
+.gitattributes linguist-language=ini
