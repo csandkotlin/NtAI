@@ -5,6 +5,7 @@
       "feat", "fix", "docs", "style", "refactor", "test", "chore", "ci", "build", "perf"
     ]],
     "subject-max-length": [2, "always", 100],
-    "subject-min-length": [2, "always", 3]
+    "subject-min-length": [2, "always", 3],
+    "subject-case": [0]
   }
 }
