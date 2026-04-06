@@ -1,7 +1,7 @@
 
 # Not an AI (NtAI)
-[![.NET Core Desktop](https://github.com/csandkotlin/NtAI/actions/workflows/dotnet-desktop.yml/badge.svg)](https://github.com/csandkotlin/NtAI/actions/workflows/dotnet-desktop.yml)
-[![.NET Core Desktop](https://github.com/csandkotlin/NtAI/actions/workflows/dotnet-desktop.yml/badge.svg)](https://github.com/csandkotlin/NtAI/actions/workflows/dotnet-desktop.yml)
+[![.NET Core Desktop](https://github.com/csandkotlin/NtAI/actions/workflows/dotnet-desktop.yml/badge.svg)](https://github.com/csandkotlin/NtAI/actions/workflows/dotnet-desktop.
+[![CodeQL Advanced](https://github.com/csandkotlin/NtAI/actions/workflows/codeql.yml/badge.svg)](https://github.com/csandkotlin/NtAI/actions/workflows/codeql.yml)
 
 ---
 [Đọc tiếng việt đi bro](./README_VI.md)
