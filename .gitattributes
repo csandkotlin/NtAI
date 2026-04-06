@@ -1,1 +1,4 @@
 *.md linguist-language=Markdown
+
+Dockerfile linguist-language=Dockerfile
+Jenkinsfile linguist-language=Markdown
