@@ -1,5 +1,6 @@
 version: 2
 updates:
+  # NuGet (.NET) - tự động tạo PR
   - package-ecosystem: "nuget"
     directory: "/"
     schedule:
@@ -9,13 +10,12 @@ updates:
     open-pull-requests-limit: 15
     labels:
       - "dependencies"
-      - "automerge"
       - "nuget"
+      - "automerge"
     reviewers:
       - "realmg51-cpu"
     assignees:
       - "realmg51-cpu"
-    # versioning-strategy: "auto"  # ❌ XÓA DÒNG NÀY
     groups:
       minor-and-patch:
         patterns:
@@ -23,3 +23,25 @@ updates:
         update-types:
           - "minor"
           - "patch"
+    ignore:
+      - dependency-name: "Microsoft.NET.Test.Sdk"
+        versions: ["18.x.x"]
+      - dependency-name: "System.Text.Json"
+        versions: [">=9.0.0"]
+
+  # GitHub Actions - tự động tạo PR
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "daily"
+      time: "07:00"
+      timezone: "Asia/Ho_Chi_Minh"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "github-actions"
+      - "automerge"
+    reviewers:
+      - "realmg51-cpu"
+    assignees:
+      - "realmg51-cpu"
