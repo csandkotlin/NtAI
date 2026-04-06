@@ -1,21 +1,18 @@
-name: Build and Release for Windows
+name: Create Release
 
 on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version number (e.g., v1.0.0)'
+        description: 'Version (e.g., v1.0.0)'
         required: true
         type: string
-        default: 'v1.0.0'
       is_prerelease:
-        description: 'Is this a pre-release?'
-        required: true
+        description: 'Pre-release?'
         type: boolean
         default: false
       is_latest:
-        description: 'Set as latest release?'
-        required: true
+        description: 'Set as latest?'
         type: boolean
         default: true
 
@@ -23,8 +20,8 @@ permissions:
   contents: write
 
 jobs:
-  build-and-release:
-    runs-on: windows-latest  # Chạy trên Windows
+  release:
+    runs-on: ubuntu-latest
     
     steps:
       - uses: actions/checkout@v4
@@ -38,81 +35,117 @@ jobs:
       
       - name: Build self-contained for Windows
         run: |
-          dotnet publish src/main/NtAI.csproj `
-            --configuration Release `
-            --runtime win-x64 `
-            --self-contained true `
-            --output ./publish `
-            -p:PublishSingleFile=true `
-            -p:IncludeNativeLibrariesForSelfExtract=true `
-            -p:DebugType=none `
-            -p:DebugSymbols=false `
-            -p:PublishTrimmed=true
+          dotnet publish src/main/NtAI.csproj \
+            -c Release \
+            -r win-x64 \
+            --self-contained true \
+            -p:PublishSingleFile=true \
+            -p:PublishTrimmed=true \
+            -o publish
       
       - name: Rename executable
         run: |
-          Rename-Item -Path "./publish/NtAI.exe" -NewName "NtAI-${{ github.event.inputs.version }}.exe"
+          mv publish/NtAI.exe "publish/NtAI-${{ github.event.inputs.version }}.exe"
       
-      - name: Generate changelog
+      - name: Generate changelog (skip invalid commits)
         id: changelog
-        shell: pwsh
         run: |
-          $prevTag = git tag --sort=-creatordate | Select-Object -First 1
-          $changelog = ""
+          # Lấy tag gần nhất
+          PREV_TAG=$(git tag --sort=-creatordate | head -n1)
           
-          if ([string]::IsNullOrEmpty($prevTag)) {
-            $changelog = "## 🎉 Initial Release`n`nWelcome to NtAI - A rule-based chatbot for beginners!`n`n"
-          } else {
-            $changelog = "## What's Changed`n`n"
-          }
+          # Lấy danh sách commit
+          if [ -z "$PREV_TAG" ]; then
+            COMMITS=$(git log --oneline --format="%s")
+          else
+            COMMITS=$(git log $PREV_TAG..HEAD --oneline --format="%s")
+          fi
           
-          if ([string]::IsNullOrEmpty($prevTag)) {
-            $commits = git log --oneline --format="%s"
-          } else {
-            $commits = git log "$prevTag..HEAD" --oneline --format="%s"
-          }
+          # Bắt đầu tạo changelog
+          if [ -z "$PREV_TAG" ]; then
+            echo "## 🎉 Initial Release" > changelog.md
+            echo "" >> changelog.md
+            echo "Welcome to NtAI - A rule-based chatbot for beginners!" >> changelog.md
+            echo "" >> changelog.md
+          else
+            echo "## What's Changed" > changelog.md
+            echo "" >> changelog.md
+          fi
           
-          $feats = @()
-          $fixes = @()
-          $others = @()
+          FEATS=""
+          FIXES=""
+          OTHERS=""
+          SKIPPED=0
           
-          foreach ($commit in $commits) {
-            if ($commit -match "^feat:") {
-              $feats += "- ✨ $($commit -replace '^feat:', '')"
-            } elseif ($commit -match "^fix:") {
-              $fixes += "- 🐛 $($commit -replace '^fix:', '')"
-            } else {
-              $others += "- 📦 $commit"
-            }
-          }
+          # Duyệt từng commit
+          while IFS= read -r commit; do
+            # Kiểm tra commit chuẩn (có type hợp lệ)
+            if [[ "$commit" =~ ^(feat|fix|docs|style|refactor|test|chore|ci):\  ]]; then
+              # Lấy subject (bỏ type và dấu cách)
+              subject=$(echo "$commit" | sed 's/^[a-z]*: //')
+              
+              if [[ "$commit" =~ ^feat: ]]; then
+                FEATS="$FEATS- ✨ $subject\n"
+              elif [[ "$commit" =~ ^fix: ]]; then
+                FIXES="$FIXES- 🐛 $subject\n"
+              else
+                OTHERS="$OTHERS- 📦 $subject\n"
+              fi
+            else
+              # Commit không chuẩn -> skip, chỉ đếm
+              SKIPPED=$((SKIPPED + 1))
+            fi
+          done <<< "$COMMITS"
           
-          if ($feats.Count -gt 0) {
-            $changelog += "### ✨ New Features`n$($feats -join "`n")`n`n"
-          }
+          # Ghi các section vào changelog
+          if [ -n "$FEATS" ]; then
+            echo "### ✨ New Features" >> changelog.md
+            echo -e "$FEATS" >> changelog.md
+            echo "" >> changelog.md
+          fi
           
-          if ($fixes.Count -gt 0) {
-            $changelog += "### 🐛 Bug Fixes`n$($fixes -join "`n")`n`n"
-          }
+          if [ -n "$FIXES" ]; then
+            echo "### 🐛 Bug Fixes" >> changelog.md
+            echo -e "$FIXES" >> changelog.md
+            echo "" >> changelog.md
+          fi
           
-          if ($others.Count -gt 0) {
-            $changelog += "### 📦 Other Changes`n$($others -join "`n")`n`n"
-          }
+          if [ -n "$OTHERS" ]; then
+            echo "### 📦 Other Changes" >> changelog.md
+            echo -e "$OTHERS" >> changelog.md
+            echo "" >> changelog.md
+          fi
           
-          $changelog += "---`n`n### 📥 Download`n- **NtAI-${{ github.event.inputs.version }}.exe** - Single file, self-contained, Windows x64"
+          # Thông báo số commit bị skip
+          if [ $SKIPPED -gt 0 ]; then
+            echo "---" >> changelog.md
+            echo "" >> changelog.md
+            echo "⚠️ **Note:** $SKIPPED commit(s) were skipped due to invalid format." >> changelog.md
+            echo "Valid format: \`type: subject\` (feat, fix, docs, style, refactor, test, chore, ci)" >> changelog.md
+          fi
           
-          $changelog | Out-File -FilePath changelog.md -Encoding utf8
+          # Thêm download section
+          echo "" >> changelog.md
+          echo "---" >> changelog.md
+          echo "" >> changelog.md
+          echo "### 📥 Download" >> changelog.md
+          echo "- **NtAI-${{ github.event.inputs.version }}.exe** - Single file, self-contained, Windows x64" >> changelog.md
           
-          $changelog | Set-Content -Path $env:GITHUB_OUTPUT -NoNewline
+          # In ra số lượng commit (để debug)
+          echo "Generated changelog with:"
+          echo "  - Features: $(echo "$FEATS" | grep -c '✨' || echo 0)"
+          echo "  - Fixes: $(echo "$FIXES" | grep -c '🐛' || echo 0)"
+          echo "  - Skipped: $SKIPPED"
       
-      - name: Create Release
+      - name: Create Tag and Release
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ github.event.inputs.version }}
           name: Release ${{ github.event.inputs.version }}
-          body_path: ./changelog.md
+          body_path: changelog.md
           files: |
-            ./publish/NtAI-${{ github.event.inputs.version }}.exe
+            publish/NtAI-${{ github.event.inputs.version }}.exe
           prerelease: ${{ github.event.inputs.is_prerelease }}
           make_latest: ${{ github.event.inputs.is_latest }}
+          generate_release_notes: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
