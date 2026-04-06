@@ -1,5 +1,5 @@
 
-# Not A AI (NtAI)
+# Not an AI (NtAI)
 [![.NET Core Desktop](https://github.com/csandkotlin/NtAI/actions/workflows/dotnet-desktop.yml/badge.svg)](https://github.com/csandkotlin/NtAI/actions/workflows/dotnet-desktop.yml)
 [![.NET Core Desktop](https://github.com/csandkotlin/NtAI/actions/workflows/dotnet-desktop.yml/badge.svg)](https://github.com/csandkotlin/NtAI/actions/workflows/dotnet-desktop.yml)
 
