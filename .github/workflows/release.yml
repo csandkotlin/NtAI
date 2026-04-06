@@ -1,0 +1,118 @@
+name: Build and Release for Windows
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version number (e.g., v1.0.0)'
+        required: true
+        type: string
+        default: 'v1.0.0'
+      is_prerelease:
+        description: 'Is this a pre-release?'
+        required: true
+        type: boolean
+        default: false
+      is_latest:
+        description: 'Set as latest release?'
+        required: true
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: windows-latest  # Chạy trên Windows
+    
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0
+      
+      - name: Build self-contained for Windows
+        run: |
+          dotnet publish src/main/NtAI.csproj `
+            --configuration Release `
+            --runtime win-x64 `
+            --self-contained true `
+            --output ./publish `
+            -p:PublishSingleFile=true `
+            -p:IncludeNativeLibrariesForSelfExtract=true `
+            -p:DebugType=none `
+            -p:DebugSymbols=false `
+            -p:PublishTrimmed=true
+      
+      - name: Rename executable
+        run: |
+          Rename-Item -Path "./publish/NtAI.exe" -NewName "NtAI-${{ github.event.inputs.version }}.exe"
+      
+      - name: Generate changelog
+        id: changelog
+        shell: pwsh
+        run: |
+          $prevTag = git tag --sort=-creatordate | Select-Object -First 1
+          $changelog = ""
+          
+          if ([string]::IsNullOrEmpty($prevTag)) {
+            $changelog = "## 🎉 Initial Release`n`nWelcome to NtAI - A rule-based chatbot for beginners!`n`n"
+          } else {
+            $changelog = "## What's Changed`n`n"
+          }
+          
+          if ([string]::IsNullOrEmpty($prevTag)) {
+            $commits = git log --oneline --format="%s"
+          } else {
+            $commits = git log "$prevTag..HEAD" --oneline --format="%s"
+          }
+          
+          $feats = @()
+          $fixes = @()
+          $others = @()
+          
+          foreach ($commit in $commits) {
+            if ($commit -match "^feat:") {
+              $feats += "- ✨ $($commit -replace '^feat:', '')"
+            } elseif ($commit -match "^fix:") {
+              $fixes += "- 🐛 $($commit -replace '^fix:', '')"
+            } else {
+              $others += "- 📦 $commit"
+            }
+          }
+          
+          if ($feats.Count -gt 0) {
+            $changelog += "### ✨ New Features`n$($feats -join "`n")`n`n"
+          }
+          
+          if ($fixes.Count -gt 0) {
+            $changelog += "### 🐛 Bug Fixes`n$($fixes -join "`n")`n`n"
+          }
+          
+          if ($others.Count -gt 0) {
+            $changelog += "### 📦 Other Changes`n$($others -join "`n")`n`n"
+          }
+          
+          $changelog += "---`n`n### 📥 Download`n- **NtAI-${{ github.event.inputs.version }}.exe** - Single file, self-contained, Windows x64"
+          
+          $changelog | Out-File -FilePath changelog.md -Encoding utf8
+          
+          $changelog | Set-Content -Path $env:GITHUB_OUTPUT -NoNewline
+      
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ github.event.inputs.version }}
+          name: Release ${{ github.event.inputs.version }}
+          body_path: ./changelog.md
+          files: |
+            ./publish/NtAI-${{ github.event.inputs.version }}.exe
+          prerelease: ${{ github.event.inputs.is_prerelease }}
+          make_latest: ${{ github.event.inputs.is_latest }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
