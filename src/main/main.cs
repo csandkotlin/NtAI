@@ -16,14 +16,14 @@ namespace NtAI
             catch (Exception ex)
             {
                 Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine($"\nLỗi: {ex.Message}");
+                Console.WriteLine($"\nOpps!: {ex.Message}");
                 Console.ResetColor();
                 
                 #if DEBUG
                 Console.WriteLine($"\n{ex.StackTrace}");
                 #endif
                 
-                Console.WriteLine("\nNhấn phím bất kỳ để thoát...");
+                Console.WriteLine("\nPress any keys to exit...");
                 Console.ReadKey();
             }
         }
