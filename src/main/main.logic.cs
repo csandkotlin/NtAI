@@ -3,6 +3,8 @@ namespace NtAI
 {
   class Logic
   {
+    private static Random _random = new Random();
+
     public static void Call()
     {
       bool run = true;
@@ -21,31 +23,60 @@ namespace NtAI
         }
         else if (input.Contains("hi") || input.Contains("hello"))
         {
-          Console.WriteLine("Hi there! Can I help you?");
+          string[] responses = { 
+            "Hi there! Can I help you?", 
+            "Hello! How's your day going?", 
+            "Hey! What's up?" 
+          };
+          Console.WriteLine(responses[_random.Next(responses.Length)]);
         }
         else if (input.Contains("your name") || input.Contains("ur name"))
         {
-          Console.WriteLine("My Name is NtAI");
+          string[] responses = { 
+            "My name is NtAI", 
+            "I'm NtAI, nice to meet you!", 
+            "Call me NtAI" 
+          };
+          Console.WriteLine(responses[_random.Next(responses.Length)]);
         }
         else if (input.Contains("bye") || input.Contains("goodbye"))
         {
-          Console.WriteLine("Bye! See you again!");
+          string[] responses = { 
+            "Bye! See you again!", 
+            "Goodbye! Have a great day!", 
+            "See you later!" 
+          };
+          Console.WriteLine(responses[_random.Next(responses.Length)]);
           run = false;
         }
         else if (input.Contains("AI"))
         {
-          Console.WriteLine("AI is... But i'm not AI,I'm rule based");
+          string[] responses = { 
+            "AI is... But I'm rule-based, not AI", 
+            "I'm just pattern matching, no AI here", 
+            "Real AI? No, I'm simpler than that" 
+          };
+          Console.WriteLine(responses[_random.Next(responses.Length)]);
         }
         else if (input.Contains("like programming") || input.Contains("love programming"))
         {
-          Console.WriteLine("Me too! C# is awesome,isn't it?");
+          string[] responses = { 
+            "Me too! C# is awesome, isn't it?", 
+            "Programming is fun! What's your favorite language?", 
+            "Same here! C# is my favorite" 
+          };
+          Console.WriteLine(responses[_random.Next(responses.Length)]);
         }
         else
         {
-          Console.WriteLine($"I don't know about '{input}',please talk about something else");
+          string[] responses = { 
+            $"I don't know about '{input}', please talk about something else",
+            $"Sorry, I don't understand '{input}'",
+            $"What does '{input}' mean? I'm just a simple bot"
+          };
+          Console.WriteLine(responses[_random.Next(responses.Length)]);
         }
       }
     }
   }
 }
-
