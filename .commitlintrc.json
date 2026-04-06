@@ -6,6 +6,7 @@
     ]],
     "subject-max-length": [2, "always", 100],
     "subject-min-length": [2, "always", 3],
-    "subject-case": [0]
+    "subject-case": [0],
+    "subject-full-stop": [0]
   }
 }
