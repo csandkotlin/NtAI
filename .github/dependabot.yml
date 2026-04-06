@@ -12,10 +12,10 @@ updates:
       - "automerge"
       - "nuget"
     reviewers:
-      - "realmg51-cpu"  # Kiểm tra username tồn tại
+      - "realmg51-cpu"
     assignees:
       - "realmg51-cpu"
-    versioning-strategy: "auto"
+    # versioning-strategy: "auto"  # ❌ XÓA DÒNG NÀY
     groups:
       minor-and-patch:
         patterns:
@@ -23,11 +23,3 @@ updates:
         update-types:
           - "minor"
           - "patch"
-    ignore:
-      - dependency-name: "Microsoft.NET.Test.Sdk"
-        versions: ["18.x.x"]
-      - dependency-name: "System.Text.Json"
-        versions: [">=9.0.0"]
-      # BỎ HOẶC SỬA dòng dưới:
-      # - dependency-name: "*"
-      #   update-types: ["version-update:semver-prerelease"]
