@@ -33,117 +33,225 @@ jobs:
         with:
           dotnet-version: 8.0
       
+      - name: Cache NuGet packages
+        uses: actions/cache@v3
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+      
+      - name: Validate version format
+        run: |
+          if [[ ! "${{ github.event.inputs.version }}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+ ]]; then
+            echo "Error: Version must start with 'v' followed by semver (e.g., v1.0.0)"
+            exit 1
+          fi
+      
+      - name: Find project file
+        id: find_project
+        run: |
+          PROJECT_FILE=$(find . -name "*.csproj" -not -path "*/obj/*" -not -path "*/bin/*" | head -n 1)
+          if [ -z "$PROJECT_FILE" ]; then
+            echo "ERROR: No .csproj file found!"
+            exit 1
+          fi
+          echo "project_file=$PROJECT_FILE" >> $GITHUB_OUTPUT
+          echo "project_name=$(basename "$PROJECT_FILE" .csproj)" >> $GITHUB_OUTPUT
+          echo "Found project file: $PROJECT_FILE"
+      
+      - name: Restore dependencies
+        run: |
+          dotnet restore "${{ steps.find_project.outputs.project_file }}"
+      
       - name: Build self-contained for Windows
         run: |
-          dotnet publish src/main/NtAI.csproj \
+          dotnet publish "${{ steps.find_project.outputs.project_file }}" \
             -c Release \
             -r win-x64 \
             --self-contained true \
             -p:PublishSingleFile=true \
             -p:PublishTrimmed=true \
+            -p:DebugType=none \
+            -p:DebugSymbols=false \
             -o publish
       
       - name: Rename executable
+        id: rename_executable
         run: |
-          mv publish/NtAI.exe "publish/NtAI-${{ github.event.inputs.version }}.exe"
+          PROJECT_NAME="${{ steps.find_project.outputs.project_name }}"
+          if [ ! -f "publish/${PROJECT_NAME}.exe" ]; then
+            echo "ERROR: Build failed - executable not found!"
+            ls -la publish/
+            exit 1
+          fi
+          mv "publish/${PROJECT_NAME}.exe" "publish/${PROJECT_NAME}-${{ github.event.inputs.version }}.exe"
+          echo "exe_path=publish/${PROJECT_NAME}-${{ github.event.inputs.version }}.exe" >> $GITHUB_OUTPUT
+          echo "exe_name=${PROJECT_NAME}-${{ github.event.inputs.version }}.exe" >> $GITHUB_OUTPUT
       
-      - name: Generate changelog (skip invalid commits)
-        id: changelog
+      - name: Generate SHA256 checksum
+        id: checksum
         run: |
-          # Lấy tag gần nhất
-          PREV_TAG=$(git tag --sort=-creatordate | head -n1)
-          
-          # Lấy danh sách commit
-          if [ -z "$PREV_TAG" ]; then
-            COMMITS=$(git log --oneline --format="%s")
-          else
-            COMMITS=$(git log $PREV_TAG..HEAD --oneline --format="%s")
+          EXE_PATH="${{ steps.rename_executable.outputs.exe_path }}"
+          if [ ! -f "$EXE_PATH" ]; then
+            echo "ERROR: Executable not found at $EXE_PATH"
+            exit 1
           fi
           
-          # Bắt đầu tạo changelog
+          sha256sum "$EXE_PATH" > "${EXE_PATH}.sha256"
+          
+          cd publish
+          sha256sum * > checksums.sha256
+          cd ..
+          
+          CHECKSUM=$(sha256sum "$EXE_PATH" | cut -d ' ' -f 1)
+          echo "checksum=$CHECKSUM" >> $GITHUB_OUTPUT
+          echo "✅ SHA256: $CHECKSUM"
+      
+      - name: Generate changelog
+        id: changelog
+        run: |
+          PREV_TAG=$(git tag --sort=-creatordate | head -n1)
+          
           if [ -z "$PREV_TAG" ]; then
-            echo "## 🎉 Initial Release" > changelog.md
+            echo "No previous tag found, using all commits"
+            COMMITS=$(git log --oneline --format="%s" | head -n 100)
+          else
+            echo "Previous tag: $PREV_TAG"
+            COMMITS=$(git log ${PREV_TAG}..HEAD --oneline --format="%s")
+          fi
+          
+          # Tạo changelog mà không dùng heredoc để tránh lỗi YAML
+          echo "# ${{ github.event.inputs.version }} ($(date +'%Y-%m-%d'))" > changelog.md
+          echo "" >> changelog.md
+          
+          if [ -z "$PREV_TAG" ]; then
+            echo "## 🎉 Initial Release" >> changelog.md
             echo "" >> changelog.md
             echo "Welcome to NtAI - A rule-based chatbot for beginners!" >> changelog.md
             echo "" >> changelog.md
           else
-            echo "## What's Changed" > changelog.md
+            echo "## What's Changed" >> changelog.md
             echo "" >> changelog.md
           fi
           
-          FEATS=""
-          FIXES=""
-          OTHERS=""
-          SKIPPED=0
-          
-          # Duyệt từng commit
-          while IFS= read -r commit; do
-            # Kiểm tra commit chuẩn (có type hợp lệ)
-            if [[ "$commit" =~ ^(feat|fix|docs|style|refactor|test|chore|ci):\  ]]; then
-              # Lấy subject (bỏ type và dấu cách)
-              subject=$(echo "$commit" | sed 's/^[a-z]*: //')
-              
-              if [[ "$commit" =~ ^feat: ]]; then
-                FEATS="$FEATS- ✨ $subject\n"
-              elif [[ "$commit" =~ ^fix: ]]; then
-                FIXES="$FIXES- 🐛 $subject\n"
-              else
-                OTHERS="$OTHERS- 📦 $subject\n"
+          if [ -z "$COMMITS" ]; then
+            echo "### No Changes" >> changelog.md
+            echo "" >> changelog.md
+            echo "This release contains no code changes from the previous version." >> changelog.md
+          else
+            FEATS=""
+            FIXES=""
+            DOCS=""
+            OTHERS=""
+            SKIPPED=0
+            TOTAL=0
+            
+            while IFS= read -r commit; do
+              if [ -z "$commit" ]; then
+                continue
               fi
-            else
-              # Commit không chuẩn -> skip, chỉ đếm
-              SKIPPED=$((SKIPPED + 1))
+              
+              TOTAL=$((TOTAL + 1))
+              
+              if [[ "$commit" =~ ^(feat|fix|docs|style|refactor|test|chore|ci):\  ]]; then
+                subject=$(echo "$commit" | sed 's/^[a-z]*: //')
+                
+                if [[ "$commit" =~ ^feat: ]]; then
+                  FEATS="${FEATS}- ✨ $subject\n"
+                elif [[ "$commit" =~ ^fix: ]]; then
+                  FIXES="${FIXES}- 🐛 $subject\n"
+                elif [[ "$commit" =~ ^docs: ]]; then
+                  DOCS="${DOCS}- 📝 $subject\n"
+                else
+                  OTHERS="${OTHERS}- 📦 $subject\n"
+                fi
+              else
+                SKIPPED=$((SKIPPED + 1))
+              fi
+            done <<< "$COMMITS"
+            
+            if [ -n "$FEATS" ]; then
+              echo "### ✨ New Features" >> changelog.md
+              echo -e "$FEATS" >> changelog.md
+              echo "" >> changelog.md
             fi
-          done <<< "$COMMITS"
-          
-          # Ghi các section vào changelog
-          if [ -n "$FEATS" ]; then
-            echo "### ✨ New Features" >> changelog.md
-            echo -e "$FEATS" >> changelog.md
-            echo "" >> changelog.md
+            
+            if [ -n "$FIXES" ]; then
+              echo "### 🐛 Bug Fixes" >> changelog.md
+              echo -e "$FIXES" >> changelog.md
+              echo "" >> changelog.md
+            fi
+            
+            if [ -n "$DOCS" ]; then
+              echo "### 📝 Documentation" >> changelog.md
+              echo -e "$DOCS" >> changelog.md
+              echo "" >> changelog.md
+            fi
+            
+            if [ -n "$OTHERS" ]; then
+              echo "### 📦 Other Changes" >> changelog.md
+              echo -e "$OTHERS" >> changelog.md
+              echo "" >> changelog.md
+            fi
+            
+            if [ -z "$FEATS" ] && [ -z "$FIXES" ] && [ -z "$DOCS" ] && [ -z "$OTHERS" ]; then
+              echo "### No valid changes" >> changelog.md
+              echo "" >> changelog.md
+              echo "No commits with valid format found in this release." >> changelog.md
+              echo "" >> changelog.md
+            fi
+            
+            if [ $SKIPPED -gt 0 ]; then
+              echo "---" >> changelog.md
+              echo "" >> changelog.md
+              echo "⚠️ **Note:** $SKIPPED commit(s) were skipped due to invalid format." >> changelog.md
+              echo "" >> changelog.md
+              echo "Valid format: \`type: subject\` (feat, fix, docs, style, refactor, test, chore, ci)" >> changelog.md
+            fi
           fi
           
-          if [ -n "$FIXES" ]; then
-            echo "### 🐛 Bug Fixes" >> changelog.md
-            echo -e "$FIXES" >> changelog.md
-            echo "" >> changelog.md
-          fi
-          
-          if [ -n "$OTHERS" ]; then
-            echo "### 📦 Other Changes" >> changelog.md
-            echo -e "$OTHERS" >> changelog.md
-            echo "" >> changelog.md
-          fi
-          
-          # Thông báo số commit bị skip
-          if [ $SKIPPED -gt 0 ]; then
-            echo "---" >> changelog.md
-            echo "" >> changelog.md
-            echo "⚠️ **Note:** $SKIPPED commit(s) were skipped due to invalid format." >> changelog.md
-            echo "Valid format: \`type: subject\` (feat, fix, docs, style, refactor, test, chore, ci)" >> changelog.md
-          fi
-          
-          # Thêm download section
           echo "" >> changelog.md
           echo "---" >> changelog.md
           echo "" >> changelog.md
           echo "### 📥 Download" >> changelog.md
-          echo "- **NtAI-${{ github.event.inputs.version }}.exe** - Single file, self-contained, Windows x64" >> changelog.md
+          echo "- **${{ steps.rename_executable.outputs.exe_name }}** - Single file, self-contained, Windows x64" >> changelog.md
+          echo "- **SHA256 Checksum:** \`${{ steps.checksum.outputs.checksum }}\`" >> changelog.md
+          echo "" >> changelog.md
+          echo "**Verify download:**" >> changelog.md
+          echo '```bash' >> changelog.md
+          echo "sha256sum ${{ steps.rename_executable.outputs.exe_name }}" >> changelog.md
+          echo "# Expected output: ${{ steps.checksum.outputs.checksum }}" >> changelog.md
+          echo '```' >> changelog.md
           
-          # In ra số lượng commit (để debug)
-          echo "Generated changelog with:"
-          echo "  - Features: $(echo "$FEATS" | grep -c '✨' || echo 0)"
-          echo "  - Fixes: $(echo "$FIXES" | grep -c '🐛' || echo 0)"
-          echo "  - Skipped: $SKIPPED"
+          echo "Changelog generated successfully"
       
-      - name: Create Tag and Release
+      - name: Create tag
+        id: create_tag
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+          if git rev-parse "${{ github.event.inputs.version }}" >/dev/null 2>&1; then
+            echo "⚠️ Tag ${{ github.event.inputs.version }} already exists"
+            echo "tag_exists=true" >> $GITHUB_OUTPUT
+          else
+            git tag -a "${{ github.event.inputs.version }}" -m "Release ${{ github.event.inputs.version }}"
+            git push origin "${{ github.event.inputs.version }}"
+            echo "✅ Created and pushed tag ${{ github.event.inputs.version }}"
+            echo "tag_exists=false" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ github.event.inputs.version }}
           name: Release ${{ github.event.inputs.version }}
           body_path: changelog.md
           files: |
-            publish/NtAI-${{ github.event.inputs.version }}.exe
+            ${{ steps.rename_executable.outputs.exe_path }}
+            ${{ steps.rename_executable.outputs.exe_path }}.sha256
+            publish/checksums.sha256
           prerelease: ${{ github.event.inputs.is_prerelease }}
           make_latest: ${{ github.event.inputs.is_latest }}
           generate_release_notes: false
