@@ -121,7 +121,7 @@ jobs:
             COMMITS=$(git log ${PREV_TAG}..HEAD --oneline --format="%s")
           fi
           
-          # Tạo changelog mà không dùng heredoc để tránh lỗi YAML
+          # Tạo changelog
           echo "# ${{ github.event.inputs.version }} ($(date +'%Y-%m-%d'))" > changelog.md
           echo "" >> changelog.md
           
@@ -140,13 +140,21 @@ jobs:
             echo "" >> changelog.md
             echo "This release contains no code changes from the previous version." >> changelog.md
           else
+            BREAKING=""
             FEATS=""
             FIXES=""
             DOCS=""
-            OTHERS=""
+            STYLE=""
+            REFACTOR=""
+            TEST=""
+            CHORE=""
+            CI=""
+            PERF=""
+            OTHER=""
             SKIPPED=0
             TOTAL=0
             
+            # Hàm xử lý commit message với nhiều biến thể
             while IFS= read -r commit; do
               if [ -z "$commit" ]; then
                 continue
@@ -154,48 +162,158 @@ jobs:
               
               TOTAL=$((TOTAL + 1))
               
-              if [[ "$commit" =~ ^(feat|fix|docs|style|refactor|test|chore|ci):\  ]]; then
-                subject=$(echo "$commit" | sed 's/^[a-z]*: //')
-                
-                if [[ "$commit" =~ ^feat: ]]; then
-                  FEATS="${FEATS}- ✨ $subject\n"
-                elif [[ "$commit" =~ ^fix: ]]; then
-                  FIXES="${FIXES}- 🐛 $subject\n"
-                elif [[ "$commit" =~ ^docs: ]]; then
-                  DOCS="${DOCS}- 📝 $subject\n"
-                else
-                  OTHERS="${OTHERS}- 📦 $subject\n"
-                fi
-              else
+              # Pattern mở rộng cho Conventional Commits:
+              # type(scope)!: subject
+              # TYPE(scope): subject (cho phép uppercase)
+              # type: subject (cho phép subject viết hoa đầu, kết thúc bằng dấu chấm)
+              
+              # Chuẩn hóa: chuyển type về lowercase để dễ xử lý, nhưng giữ nguyên subject
+              # Lấy type (phần trước dấu :)
+              TYPE=$(echo "$commit" | sed -E 's/^([a-zA-Z]+)(\([^)]*\))?(!)?:.*/\1/' | tr '[:upper:]' '[:lower:]')
+              HAS_BREAKING=$(echo "$commit" | grep -q '!:' && echo "true" || echo "false")
+              # Lấy subject (bỏ phần type và scope, giữ nguyên case)
+              SUBJECT=$(echo "$commit" | sed -E 's/^[a-zA-Z]+(\([^)]*\))?!?:[[:space:]]*//' | sed 's/[[:space:]]*$//')
+              
+              # Bỏ qua subject trống
+              if [ -z "$SUBJECT" ]; then
                 SKIPPED=$((SKIPPED + 1))
+                continue
               fi
+              
+              # Xóa dấu chấm cuối nếu có (cho mục đích hiển thị)
+              SUBJECT_CLEAN=$(echo "$SUBJECT" | sed 's/\.$//')
+              
+              # Kiểm tra xem có phải conventional commit không
+              case "$TYPE" in
+                feat|feature)
+                  if [ "$HAS_BREAKING" = "true" ]; then
+                    BREAKING="${BREAKING}- 💥 **BREAKING:** $SUBJECT_CLEAN\n"
+                  else
+                    FEATS="${FEATS}- ✨ $SUBJECT_CLEAN\n"
+                  fi
+                  ;;
+                fix|bugfix)
+                  if [ "$HAS_BREAKING" = "true" ]; then
+                    BREAKING="${BREAKING}- 💥 **BREAKING:** $SUBJECT_CLEAN\n"
+                  else
+                    FIXES="${FIXES}- 🐛 $SUBJECT_CLEAN\n"
+                  fi
+                  ;;
+                docs)
+                  DOCS="${DOCS}- 📝 $SUBJECT_CLEAN\n"
+                  ;;
+                style|format)
+                  STYLE="${STYLE}- 💄 $SUBJECT_CLEAN\n"
+                  ;;
+                refactor)
+                  REFACTOR="${REFACTOR}- ♻️ $SUBJECT_CLEAN\n"
+                  ;;
+                test)
+                  TEST="${TEST}- ✅ $SUBJECT_CLEAN\n"
+                  ;;
+                chore|build|deps|dependencies)
+                  CHORE="${CHORE}- 🔧 $SUBJECT_CLEAN\n"
+                  ;;
+                ci)
+                  CI="${CI}- 👷 $SUBJECT_CLEAN\n"
+                  ;;
+                perf|performance)
+                  PERF="${PERF}- ⚡ $SUBJECT_CLEAN\n"
+                  ;;
+                revert)
+                  OTHER="${OTHER}- ⏪️ $SUBJECT_CLEAN\n"
+                  ;;
+                *)
+                  # Cho phép các type tùy chỉnh khác
+                  if [ -n "$TYPE" ] && [ "$TYPE" != "$commit" ]; then
+                    OTHER="${OTHER}- 📦 **$TYPE:** $SUBJECT_CLEAN\n"
+                  else
+                    # Không phải conventional commit format
+                    SKIPPED=$((SKIPPED + 1))
+                  fi
+                  ;;
+              esac
             done <<< "$COMMITS"
+            
+            # Thêm breaking changes (ưu tiên lên đầu)
+            if [ -n "$BREAKING" ]; then
+              echo "### 💥 Breaking Changes" >> changelog.md
+              echo "" >> changelog.md
+              echo -e "$BREAKING" >> changelog.md
+              echo "" >> changelog.md
+            fi
             
             if [ -n "$FEATS" ]; then
               echo "### ✨ New Features" >> changelog.md
+              echo "" >> changelog.md
               echo -e "$FEATS" >> changelog.md
               echo "" >> changelog.md
             fi
             
             if [ -n "$FIXES" ]; then
               echo "### 🐛 Bug Fixes" >> changelog.md
+              echo "" >> changelog.md
               echo -e "$FIXES" >> changelog.md
+              echo "" >> changelog.md
+            fi
+            
+            if [ -n "$PERF" ]; then
+              echo "### ⚡ Performance Improvements" >> changelog.md
+              echo "" >> changelog.md
+              echo -e "$PERF" >> changelog.md
               echo "" >> changelog.md
             fi
             
             if [ -n "$DOCS" ]; then
               echo "### 📝 Documentation" >> changelog.md
+              echo "" >> changelog.md
               echo -e "$DOCS" >> changelog.md
               echo "" >> changelog.md
             fi
             
-            if [ -n "$OTHERS" ]; then
-              echo "### 📦 Other Changes" >> changelog.md
-              echo -e "$OTHERS" >> changelog.md
+            if [ -n "$STYLE" ]; then
+              echo "### 💄 Code Style" >> changelog.md
+              echo "" >> changelog.md
+              echo -e "$STYLE" >> changelog.md
               echo "" >> changelog.md
             fi
             
-            if [ -z "$FEATS" ] && [ -z "$FIXES" ] && [ -z "$DOCS" ] && [ -z "$OTHERS" ]; then
+            if [ -n "$REFACTOR" ]; then
+              echo "### ♻️ Refactoring" >> changelog.md
+              echo "" >> changelog.md
+              echo -e "$REFACTOR" >> changelog.md
+              echo "" >> changelog.md
+            fi
+            
+            if [ -n "$TEST" ]; then
+              echo "### ✅ Tests" >> changelog.md
+              echo "" >> changelog.md
+              echo -e "$TEST" >> changelog.md
+              echo "" >> changelog.md
+            fi
+            
+            if [ -n "$CI" ]; then
+              echo "### 👷 CI/CD" >> changelog.md
+              echo "" >> changelog.md
+              echo -e "$CI" >> changelog.md
+              echo "" >> changelog.md
+            fi
+            
+            if [ -n "$CHORE" ]; then
+              echo "### 🔧 Maintenance" >> changelog.md
+              echo "" >> changelog.md
+              echo -e "$CHORE" >> changelog.md
+              echo "" >> changelog.md
+            fi
+            
+            if [ -n "$OTHER" ]; then
+              echo "### 📦 Other Changes" >> changelog.md
+              echo "" >> changelog.md
+              echo -e "$OTHER" >> changelog.md
+              echo "" >> changelog.md
+            fi
+            
+            if [ -z "$BREAKING" ] && [ -z "$FEATS" ] && [ -z "$FIXES" ] && [ -z "$PERF" ] && [ -z "$DOCS" ] && [ -z "$STYLE" ] && [ -z "$REFACTOR" ] && [ -z "$TEST" ] && [ -z "$CI" ] && [ -z "$CHORE" ] && [ -z "$OTHER" ]; then
               echo "### No valid changes" >> changelog.md
               echo "" >> changelog.md
               echo "No commits with valid format found in this release." >> changelog.md
@@ -207,7 +325,9 @@ jobs:
               echo "" >> changelog.md
               echo "⚠️ **Note:** $SKIPPED commit(s) were skipped due to invalid format." >> changelog.md
               echo "" >> changelog.md
-              echo "Valid format: \`type: subject\` (feat, fix, docs, style, refactor, test, chore, ci)" >> changelog.md
+              echo "Valid format: \`type(scope)!: subject\`" >> changelog.md
+              echo "" >> changelog.md
+              echo "Supported types: \`feat\`, \`fix\`, \`docs\`, \`style\`, \`refactor\`, \`test\`, \`chore\`, \`ci\`, \`perf\`, \`revert\`" >> changelog.md
             fi
           fi
           
